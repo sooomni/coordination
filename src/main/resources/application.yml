@@ -1,0 +1,29 @@
+spring:
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:tcp://localhost/~/DB/b2c
+    username: sa
+    password:
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 10
+      minimum-idle: 5
+
+mybatis:
+  type-aliases-package: com.coordination.goods.domain
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+server:
+  port: 8080
+
+# Logging Setting
+logging:
+  level:
+    org.hibernate.SQL: debug
+    org.hibernate.type: trace # query parameter ??
+    org.springframework: DEBUG

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.coordination.goods.mapper.GoodsMapper">
+    <select id="findAll" resultType="com.coordination.goods.dto.GoodsVO">
+    /* GoodsMapper.findAll */
+        SELECT
+            goods_id AS id,
+            price    AS price,
+            category AS category,
+            brand_id AS brandId
+        from goods
+    </select>
+
+    <select id="findByGoodsId" parameterType="Long" resultType="com.coordination.goods.dto.GoodsVO">
+    /* GoodsMapper.findByGoodsId */
+        SELECT
+            goods_id AS id,
+            price    AS price,
+            category AS category,
+            brand_id AS brandId
+        from goods
+        WHERE goods_id = #{goodsId}
+    </select>
+
+    <delete id="deleteGoods" parameterType="Long">
+     /* GoodsMapper.deleteGoods */
+        DELETE FROM goods
+        WHERE goods_id = #{goodsId}
+    </delete>
+
+    <update id="updateGoods" parameterType="com.coordination.goods.dto.GoodsVO">
+    /* GoodsMapper.updateGoods */
+        UPDATE goods
+        SET price = #{price}, category = #{category}, brand_id = #{brandId}
+        WHERE goods_id = #{goodsId}
+    </update>
+
+    <insert id="createGoods" parameterType="com.coordination.goods.dto.GoodsVO">
+    /* GoodsMapper.createGoods */
+        INSERT INTO goods (price, category, brand_id)
+        VALUES (#{price}, #{category}, #{brandId})
+    </insert>
+
+    <select id="findSingleBrandLowestPriceCoordination" resultType="com.coordination.goods.dto.GoodsVO">
+     /* GoodsMapper.findSingleBrandLowestPriceCoordination */
+        SELECT
+            g.brand_id AS brandId,
+            g.category AS category,
+            MIN(g.price) AS price
+        FROM goods g
+        INNER JOIN ( SELECT brand_id,SUM(price) AS totalPrice FROM goods GROUP BY brand_id ) ta
+         ON g.brand_id = ta.brand_id
+        WHERE ta.TotalPrice = (
+            SELECT MIN(tb.totalPrice) FROM (SELECT brand_id, SUM(price) AS totalPrice FROM goods GROUP BY brand_id ) tb )
+        GROUP BY g.brand_id, g.category
+    </select>
+    <select id="findLowestPriceGoodsInfoByCategory" resultType="com.coordination.goods.dto.GoodsVO">
+    /* GoodsMapper.findLowestPriceGoodsInfoByCategory */
+        SELECT
+            g.category AS category,
+            g.brand_id AS brandId,
+            g.price AS price
+         FROM goods g
+        INNER JOIN ( SELECT category,MIN(price) AS min_price FROM goods GROUP BY category) mg
+         ON g.category = mg.category AND g.price = mg.min_price
+        LEFT JOIN goods zg
+         ON g.category = zg.category AND g.price = zg.price AND g.brand_id > zg.brand_id
+        WHERE zg.brand_id IS NULL
+        ORDER BY CASE
+            WHEN g.category = '상의' THEN 1
+            WHEN g.category = '아우터' THEN 2
+            WHEN g.category = '바지' THEN 3
+            WHEN g.category = '스니커즈' THEN 4
+            WHEN g.category = '가방' THEN 5
+            WHEN g.category = '모자' THEN 6
+            WHEN g.category = '양말' THEN 7
+            WHEN g.category = '액세서리' THEN 8
+            ELSE 9
+        END
+    </select>
+
+    <select id="findLowestAndHighestGoodsInfoByCategory" parameterType="String" resultType="com.coordination.goods.dto.GoodsVO">
+    /* GoodsMapper.findLowestAndHighestGoodsInfoByCategory */
+        SELECT
+            g.brand_id as brandId,
+            g.price as price
+        FROM goods g
+        WHERE g.category = #{category}
+         AND (g.price = (SELECT MIN(price) FROM goods WHERE category = g.category)
+         OR g.price = (SELECT MAX(price) FROM goods WHERE category = g.category))
+        ORDER BY g.price
+    </select>
+</mapper>
